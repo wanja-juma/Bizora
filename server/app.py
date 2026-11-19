@@ -8,6 +8,7 @@ from auth_routes import auth, validate_account
 from config import Config
 from extensions import db, jwt, migrate
 from models import Category, User
+from catalog_routes import catalog
 
 
 def create_app():
@@ -27,6 +28,7 @@ def create_app():
     jwt.init_app(app)
 
     app.register_blueprint(auth, url_prefix="/api/auth")
+    app.register_blueprint(catalog, url_prefix="/api")
 
     @jwt.user_lookup_loader
     def load_user(_jwt_header, jwt_data):

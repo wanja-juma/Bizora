@@ -66,3 +66,55 @@ class User(db.Model):
             "email": self.email,
             "role": self.role,
         }
+
+class Product(db.Model):
+    __tablename__ = "products"
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "price_minor >= 0",
+            name="product_price_nonnegative",
+        ),
+        db.CheckConstraint(
+            "cost_minor >= 0",
+            name="product_cost_nonnegative",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    description = db.Column(
+        db.Text,
+        nullable=False,
+        default="",
+    )
+    category_id = db.Column(
+        db.Integer,
+        db.ForeignKey("categories.id"),
+        nullable=False,
+    )
+    price_minor = db.Column(db.Integer, nullable=False)
+    cost_minor = db.Column(db.Integer, nullable=False)
+    is_active = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    category = db.relationship("Category")
+
+    def to_dict(self, include_cost=False):
+        data = {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "category_id": self.category_id,
+            "category_name": self.category.name,
+            "price_minor": self.price_minor,
+            "is_active": self.is_active,
+        }
+
+        if include_cost:
+            data["cost_minor"] = self.cost_minor
+
+        return data

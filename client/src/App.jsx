@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import CatalogManager from "./components/CatalogManager";
 import { api } from "./services/api";
 import "./App.css";
 
@@ -11,7 +12,7 @@ const emptyStaff = {
 
 function App() {
   const [token, setToken] = useState(
-    () => sessionStorage.getItem("bizora_token") || ""
+    () => sessionStorage.getItem("bizora_token") || "",
   );
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
@@ -82,10 +83,7 @@ function App() {
         body: loginForm,
       });
 
-      sessionStorage.setItem(
-        "bizora_token",
-        data.access_token
-      );
+      sessionStorage.setItem("bizora_token", data.access_token);
 
       setChecking(true);
       setToken(data.access_token);
@@ -146,6 +144,15 @@ function App() {
     }
   }
 
+  const handleSessionExpired = useCallback((message) => {
+    sessionStorage.removeItem("bizora_token");
+    setToken("");
+    setUser(null);
+    setStaffForm(emptyStaff);
+    setNotice("");
+    setError(message);
+  }, []);
+
   return (
     <main className="setup-page">
       <section className="setup-card">
@@ -168,14 +175,9 @@ function App() {
         ) : !user ? (
           <>
             <h1>Welcome back</h1>
-            <p className="description">
-              Log in to manage your business.
-            </p>
+            <p className="description">Log in to manage your business.</p>
 
-            <form
-              className="auth-form"
-              onSubmit={handleLogin}
-            >
+            <form className="auth-form" onSubmit={handleLogin}>
               <label htmlFor="login-email">Email</label>
               <input
                 id="login-email"
@@ -192,9 +194,7 @@ function App() {
                 }
               />
 
-              <label htmlFor="login-password">
-                Password
-              </label>
+              <label htmlFor="login-password">Password</label>
               <input
                 id="login-password"
                 type="password"
@@ -238,13 +238,8 @@ function App() {
               <section className="staff-section">
                 <h2>Create a staff account</h2>
 
-                <form
-                  className="auth-form"
-                  onSubmit={handleCreateStaff}
-                >
-                  <label htmlFor="staff-name">
-                    Full name
-                  </label>
+                <form className="auth-form" onSubmit={handleCreateStaff}>
+                  <label htmlFor="staff-name">Full name</label>
                   <input
                     id="staff-name"
                     autoComplete="off"
@@ -275,9 +270,7 @@ function App() {
                     }
                   />
 
-                  <label htmlFor="staff-password">
-                    Password
-                  </label>
+                  <label htmlFor="staff-password">Password</label>
                   <input
                     id="staff-password"
                     type="password"
@@ -303,13 +296,19 @@ function App() {
               </section>
             ) : (
               <p className="description">
-                Your staff workspace is ready. Sales and
-                inventory features will appear here as we
-                build them.
+                Your staff workspace is ready. Sales and inventory features will
+                appear here as we build them.
               </p>
             )}
           </>
         )}
+        {!checking && user && token && (
+  <CatalogManager
+    token={token}
+    user={user}
+    onSessionExpired={handleSessionExpired}
+  />
+)}
       </section>
     </main>
   );
