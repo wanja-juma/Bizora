@@ -3,6 +3,7 @@ from werkzeug.security import (
     check_password_hash,
     generate_password_hash,
 )
+from datetime import datetime, timezone
 
 class Category(db.Model):
     __tablename__ = "categories"
@@ -118,3 +119,143 @@ class Product(db.Model):
             data["cost_minor"] = self.cost_minor
 
         return data
+
+class ProductVariant(db.Model):
+    __tablename__ = "product_variants"
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "product_id",
+            "size",
+            "color",
+            name="unique_product_size_color",
+        ),
+        db.CheckConstraint(
+            "stock >= 0",
+            name="variant_stock_nonnegative",
+        ),
+        db.CheckConstraint(
+            "low_stock_threshold >= 0",
+            name="variant_threshold_nonnegative",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey("products.id"),
+        nullable=False,
+    )
+
+    sku = db.Column(
+        db.String(60),
+        nullable=False,
+        unique=True,
+    )
+
+    size = db.Column(
+        db.String(30),
+        nullable=False,
+        default="",
+    )
+
+    color = db.Column(
+        db.String(50),
+        nullable=False,
+        default="",
+    )
+
+    stock = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0,
+    )
+
+    low_stock_threshold = db.Column(
+        db.Integer,
+        nullable=False,
+        default=5,
+    )
+
+    product = db.relationship("Product")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "product_id": self.product_id,
+            "sku": self.sku,
+            "size": self.size,
+            "color": self.color,
+            "stock": self.stock,
+            "low_stock_threshold": self.low_stock_threshold,
+            "is_low_stock": self.stock <= self.low_stock_threshold,
+        }
+
+
+class StockMovement(db.Model):
+    __tablename__ = "stock_movements"
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "quantity_change != 0",
+            name="movement_change_nonzero",
+        ),
+        db.CheckConstraint(
+            "balance_after >= 0",
+            name="movement_balance_nonnegative",
+        ),
+        db.CheckConstraint(
+            "kind IN ('receipt', 'adjustment')",
+            name="valid_stock_movement_kind",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    variant_id = db.Column(
+        db.Integer,
+        db.ForeignKey("product_variants.id"),
+        nullable=False,
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    request_id = db.Column(
+        db.String(36),
+        unique=True,
+        nullable=False,
+    )
+
+    kind = db.Column(db.String(20), nullable=False)
+    quantity_change = db.Column(db.Integer, nullable=False)
+    balance_after = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.String(255), nullable=False)
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(
+            tzinfo=None
+        ),
+    )
+
+    user = db.relationship("User")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "variant_id": self.variant_id,
+            "kind": self.kind,
+            "quantity_change": self.quantity_change,
+            "balance_after": self.balance_after,
+            "reason": self.reason,
+            "recorded_by": self.user.name,
+            "created_at": self.created_at.replace(
+                tzinfo=timezone.utc
+            ).isoformat(),
+        }

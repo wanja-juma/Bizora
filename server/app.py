@@ -3,7 +3,7 @@ import click
 from flask import Flask, jsonify
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-
+from inventory_routes import inventory
 from auth_routes import auth, validate_account
 from config import Config
 from extensions import db, jwt, migrate
@@ -29,6 +29,7 @@ def create_app():
 
     app.register_blueprint(auth, url_prefix="/api/auth")
     app.register_blueprint(catalog, url_prefix="/api")
+    app.register_blueprint(inventory, url_prefix="/api")
 
     @jwt.user_lookup_loader
     def load_user(_jwt_header, jwt_data):

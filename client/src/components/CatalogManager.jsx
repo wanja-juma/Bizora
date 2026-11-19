@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import InventoryPanel from "./InventoryPanel";
 import { api } from "../services/api";
 import "./CatalogManager.css";
 
@@ -18,11 +18,7 @@ function formatMoney(minor) {
   }).format(minor / 100);
 }
 
-export default function CatalogManager({
-  token,
-  user,
-  onSessionExpired,
-}) {
+export default function CatalogManager({ token, user, onSessionExpired }) {
   const isOwner = user.role === "owner";
 
   const [categories, setCategories] = useState([]);
@@ -116,22 +112,20 @@ export default function CatalogManager({
 
     runChange(async () => {
       const saved = await api(
-        categoryId
-          ? `/categories/${categoryId}`
-          : "/categories",
+        categoryId ? `/categories/${categoryId}` : "/categories",
         {
           method: categoryId ? "PATCH" : "POST",
           token,
           body: { name: categoryName },
-        }
+        },
       );
 
       setCategories((previous) =>
         categoryId
           ? previous.map((category) =>
-              category.id === saved.id ? saved : category
+              category.id === saved.id ? saved : category,
             )
-          : [...previous, saved]
+          : [...previous, saved],
       );
 
       // Reflect a renamed category in the product list.
@@ -139,8 +133,8 @@ export default function CatalogManager({
         previous.map((product) =>
           product.category_id === saved.id
             ? { ...product, category_name: saved.name }
-            : product
-        )
+            : product,
+        ),
       );
 
       resetCategory();
@@ -161,15 +155,15 @@ export default function CatalogManager({
             ...productForm,
             category_id: Number(productForm.category_id),
           },
-        }
+        },
       );
 
       setProducts((previous) =>
         productId
           ? previous.map((product) =>
-              product.id === saved.id ? saved : product
+              product.id === saved.id ? saved : product,
             )
-          : [...previous, saved]
+          : [...previous, saved],
       );
 
       resetProduct();
@@ -192,25 +186,18 @@ export default function CatalogManager({
 
   function toggleProduct(product) {
     runChange(async () => {
-      const saved = await api(
-        `/products/${product.id}/status`,
-        {
-          method: "PATCH",
-          token,
-          body: { is_active: !product.is_active },
-        }
-      );
+      const saved = await api(`/products/${product.id}/status`, {
+        method: "PATCH",
+        token,
+        body: { is_active: !product.is_active },
+      });
 
       setProducts((previous) =>
-        previous.map((item) =>
-          item.id === saved.id ? saved : item
-        )
+        previous.map((item) => (item.id === saved.id ? saved : item)),
       );
 
       setNotice(
-        saved.is_active
-          ? "Product reactivated."
-          : "Product deactivated."
+        saved.is_active ? "Product reactivated." : "Product deactivated.",
       );
     });
   }
@@ -273,9 +260,7 @@ export default function CatalogManager({
               required
               maxLength={100}
               value={categoryName}
-              onChange={(event) =>
-                setCategoryName(event.target.value)
-              }
+              onChange={(event) => setCategoryName(event.target.value)}
             />
 
             <div className="catalog-actions">
@@ -284,11 +269,7 @@ export default function CatalogManager({
               </button>
 
               {categoryId && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={resetCategory}
-                >
+                <button type="button" disabled={busy} onClick={resetCategory}>
                   Cancel
                 </button>
               )}
@@ -328,9 +309,7 @@ export default function CatalogManager({
               ))}
             </select>
 
-            <label htmlFor="product-description">
-              Description
-            </label>
+            <label htmlFor="product-description">Description</label>
             <textarea
               id="product-description"
               name="description"
@@ -353,9 +332,7 @@ export default function CatalogManager({
               onChange={changeProduct}
             />
 
-            <label htmlFor="product-price">
-              Selling price (KSh)
-            </label>
+            <label htmlFor="product-price">Selling price (KSh)</label>
             <input
               id="product-price"
               name="price"
@@ -369,19 +346,12 @@ export default function CatalogManager({
             />
 
             <div className="catalog-actions">
-              <button
-                type="submit"
-                disabled={busy || categories.length === 0}
-              >
+              <button type="submit" disabled={busy || categories.length === 0}>
                 {productId ? "Save product" : "Add product"}
               </button>
 
               {productId && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={resetProduct}
-                >
+                <button type="button" disabled={busy} onClick={resetProduct}>
                   Cancel
                 </button>
               )}
@@ -401,22 +371,14 @@ export default function CatalogManager({
               <h4>{product.name}</h4>
               <p>{product.category_name}</p>
 
-              {product.description && (
-                <p>{product.description}</p>
-              )}
+              {product.description && <p>{product.description}</p>}
 
-              <p>
-                Selling price: {formatMoney(product.price_minor)}
-              </p>
+              <p>Selling price: {formatMoney(product.price_minor)}</p>
 
               {isOwner && (
                 <>
-                  <p>
-                    Cost price: {formatMoney(product.cost_minor)}
-                  </p>
-                  <p>
-                    Status: {product.is_active ? "Active" : "Inactive"}
-                  </p>
+                  <p>Cost price: {formatMoney(product.cost_minor)}</p>
+                  <p>Status: {product.is_active ? "Active" : "Inactive"}</p>
 
                   <div className="catalog-actions">
                     <button
@@ -431,13 +393,17 @@ export default function CatalogManager({
                       disabled={busy}
                       onClick={() => toggleProduct(product)}
                     >
-                      {product.is_active
-                        ? "Deactivate"
-                        : "Reactivate"}
+                      {product.is_active ? "Deactivate" : "Reactivate"}
                     </button>
                   </div>
                 </>
               )}
+              <InventoryPanel
+                product={product}
+                token={token}
+                isOwner={isOwner}
+                onSessionExpired={onSessionExpired}
+              />
             </article>
           ))}
         </div>

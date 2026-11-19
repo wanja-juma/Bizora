@@ -1,0 +1,56 @@
+.inventory-panel {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #cbd5e1;
+}
+
+.inventory-panel summary {
+  margin-bottom: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inventory-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.variant-list {
+  padding: 0;
+  list-style: none;
+}
+
+.variant-list li {
+  margin-top: 12px;
+  padding: 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.low-stock {
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.stock-history {
+  margin-top: 24px;
+}
+
+.stock-history ol {
+  padding-left: 22px;
+}
+
+.stock-history li {
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.stock-history p {
+  margin: 6px 0;
+}
+
+.stock-history small {
+  color: #64748b;
+}
