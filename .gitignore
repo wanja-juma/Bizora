@@ -1,0 +1,23 @@
+# Frontend
+node_modules/
+dist/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Local database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
