@@ -1,15 +1,16 @@
 import click
 
 from flask import Flask, jsonify
-from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from inventory_routes import inventory
-from auth_routes import auth, validate_account
+
+from sqlalchemy.exc import IntegrityError
+from routes.health_routes import health
 from config import Config
 from extensions import db, jwt, migrate
 from models import Category, User
-from catalog_routes import catalog
-from sales_routes import sales
+from routes.auth_routes import auth, validate_account
+from routes.catalog_routes import catalog
+from routes.inventory_routes import inventory
+from routes.sales_routes import sales
 
 def create_app():
     app = Flask(__name__)
@@ -31,6 +32,7 @@ def create_app():
     app.register_blueprint(catalog, url_prefix="/api")
     app.register_blueprint(inventory, url_prefix="/api")
     app.register_blueprint(sales, url_prefix="/api")
+    app.register_blueprint(health, url_prefix="/api")
 
     @jwt.user_lookup_loader
     def load_user(_jwt_header, jwt_data):
@@ -117,23 +119,6 @@ def create_app():
 
         click.echo("Owner account created successfully.")
 
-    @app.get("/api/health")
-    def health():
-        try:
-            db.session.execute(text("SELECT 1"))
-        except SQLAlchemyError:
-            db.session.rollback()
-            app.logger.exception("Database health check failed")
-
-            return jsonify({
-                "message": "Database connection failed.",
-                "database": "unavailable",
-            }), 503
-
-        return jsonify({
-            "message": "Bizora API is running.",
-            "database": "connected",
-        }), 200
 
     @app.get("/api/categories")
     def get_categories():
