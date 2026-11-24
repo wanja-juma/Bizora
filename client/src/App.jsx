@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import CatalogManager from "./components/CatalogManager";
 import { api } from "./services/api";
+import SalesManager from "./components/SalesManager";
 import "./App.css";
 
 const emptyStaff = {
@@ -303,12 +304,20 @@ function App() {
           </>
         )}
         {!checking && user && token && (
-  <CatalogManager
-    token={token}
-    user={user}
-    onSessionExpired={handleSessionExpired}
-  />
-)}
+          <CatalogManager
+            token={token}
+            user={user}
+            onSessionExpired={handleSessionExpired}
+          />
+        )}
+
+        {!checking && user && token && (
+          <SalesManager
+            token={token}
+            user={user}
+            onSessionExpired={handleSessionExpired}
+          />
+        )}
       </section>
     </main>
   );

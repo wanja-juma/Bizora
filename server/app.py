@@ -9,7 +9,7 @@ from config import Config
 from extensions import db, jwt, migrate
 from models import Category, User
 from catalog_routes import catalog
-
+from sales_routes import sales
 
 def create_app():
     app = Flask(__name__)
@@ -30,6 +30,7 @@ def create_app():
     app.register_blueprint(auth, url_prefix="/api/auth")
     app.register_blueprint(catalog, url_prefix="/api")
     app.register_blueprint(inventory, url_prefix="/api")
+    app.register_blueprint(sales, url_prefix="/api")
 
     @jwt.user_lookup_loader
     def load_user(_jwt_header, jwt_data):

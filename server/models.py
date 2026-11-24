@@ -5,6 +5,7 @@ from werkzeug.security import (
 )
 from datetime import datetime, timezone
 
+
 class Category(db.Model):
     __tablename__ = "categories"
 
@@ -16,6 +17,7 @@ class Category(db.Model):
             "id": self.id,
             "name": self.name,
         }
+
 
 class User(db.Model):
     __tablename__ = "users"
@@ -68,6 +70,7 @@ class User(db.Model):
             "role": self.role,
         }
 
+
 class Product(db.Model):
     __tablename__ = "products"
 
@@ -119,6 +122,7 @@ class Product(db.Model):
             data["cost_minor"] = self.cost_minor
 
         return data
+
 
 class ProductVariant(db.Model):
     __tablename__ = "product_variants"
@@ -206,7 +210,7 @@ class StockMovement(db.Model):
             name="movement_balance_nonnegative",
         ),
         db.CheckConstraint(
-            "kind IN ('receipt', 'adjustment')",
+            "kind IN ('receipt', 'adjustment', 'sale')",
             name="valid_stock_movement_kind",
         ),
     )
@@ -239,10 +243,17 @@ class StockMovement(db.Model):
     created_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(timezone.utc).replace(
-            tzinfo=None
-        ),
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
     )
+
+    sale_id = db.Column(
+    db.Integer,
+    db.ForeignKey(
+        "sales.id",
+        name="fk_stock_movements_sale_id",
+    ),
+    nullable=True,
+)
 
     user = db.relationship("User")
 
@@ -251,11 +262,133 @@ class StockMovement(db.Model):
             "id": self.id,
             "variant_id": self.variant_id,
             "kind": self.kind,
+            "sale_id": self.sale_id,
             "quantity_change": self.quantity_change,
             "balance_after": self.balance_after,
             "reason": self.reason,
             "recorded_by": self.user.name,
-            "created_at": self.created_at.replace(
-                tzinfo=timezone.utc
-            ).isoformat(),
+            "created_at": self.created_at.replace(tzinfo=timezone.utc).isoformat(),
+        }
+
+
+class Sale(db.Model):
+    __tablename__ = "sales"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    request_id = db.Column(
+        db.String(36),
+        unique=True,
+        nullable=False,
+    )
+
+    request_fingerprint = db.Column(
+        db.String(64),
+        nullable=False,
+    )
+
+    payment_method = db.Column(
+        db.String(20),
+        nullable=False,
+    )
+
+    total_minor = db.Column(
+        db.BigInteger,
+        nullable=False,
+        default=0,
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+    )
+
+    user = db.relationship("User")
+
+    items = db.relationship(
+        "SaleItem",
+        back_populates="sale",
+        cascade="all, delete-orphan",
+        order_by="SaleItem.id",
+    )
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "total_minor >= 0",
+            name="sale_total_nonnegative",
+        ),
+        db.CheckConstraint(
+            "payment_method IN ('cash', 'mpesa', 'card')",
+            name="valid_sale_payment_method",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "recorded_by": self.user.name,
+            "payment_method": self.payment_method,
+            "total_minor": self.total_minor,
+            "created_at": self.created_at.replace(tzinfo=timezone.utc).isoformat(),
+            "items": [item.to_dict() for item in self.items],
+        }
+
+
+class SaleItem(db.Model):
+    __tablename__ = "sale_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    sale_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sales.id"),
+        nullable=False,
+    )
+
+    variant_id = db.Column(
+        db.Integer,
+        db.ForeignKey("product_variants.id"),
+        nullable=False,
+    )
+
+    product_name = db.Column(db.String(150), nullable=False)
+    sku = db.Column(db.String(60), nullable=False)
+
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_price_minor = db.Column(db.BigInteger, nullable=False)
+    unit_cost_minor = db.Column(db.BigInteger, nullable=False)
+
+    sale = db.relationship("Sale", back_populates="items")
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "sale_id",
+            "variant_id",
+            name="unique_sale_variant",
+        ),
+        db.CheckConstraint(
+            "quantity > 0",
+            name="sale_item_quantity_positive",
+        ),
+        db.CheckConstraint(
+            "unit_price_minor >= 0 AND unit_cost_minor >= 0",
+            name="sale_item_prices_nonnegative",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "variant_id": self.variant_id,
+            "product_name": self.product_name,
+            "sku": self.sku,
+            "quantity": self.quantity,
+            "unit_price_minor": self.unit_price_minor,
+            "subtotal_minor": (self.quantity * self.unit_price_minor),
         }

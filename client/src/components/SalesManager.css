@@ -1,0 +1,65 @@
+.sales-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sales-fields {
+  min-width: 0;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+}
+
+.sales-section select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  color: #172b4d;
+}
+
+.sales-section button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #087f8c;
+  color: white;
+  cursor: pointer;
+}
+
+.sales-section button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sale-cart {
+  padding: 0;
+  list-style: none;
+}
+
+.sale-cart li,
+.sales-history article {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.payment-label {
+  display: block;
+  margin: 20px 0 8px;
+  font-weight: 600;
+}
+
+.record-sale-button {
+  margin-top: 18px;
+}
+
+.sales-history h4 {
+  margin-top: 0;
+}
