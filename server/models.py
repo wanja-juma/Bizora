@@ -1,9 +1,10 @@
+from datetime import datetime, timezone
 from extensions import db
 from werkzeug.security import (
     check_password_hash,
     generate_password_hash,
 )
-from datetime import datetime, timezone
+
 
 
 class Category(db.Model):
@@ -444,4 +445,75 @@ class SaleItem(db.Model):
             "quantity": self.quantity,
             "unit_price_minor": self.unit_price_minor,
             "subtotal_minor": (self.quantity * self.unit_price_minor),
+        }
+
+class Expense(db.Model):
+    __tablename__ = "expenses"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    description = db.Column(
+        db.String(150),
+        nullable=False,
+    )
+
+    category = db.Column(
+        db.String(50),
+        nullable=False,
+    )
+
+    amount_minor = db.Column(
+        db.BigInteger,
+        nullable=False,
+    )
+
+    date_paid = db.Column(
+        db.Date,
+        nullable=False,
+    )
+
+    notes = db.Column(
+        db.Text,
+        nullable=False,
+        default="",
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(
+            tzinfo=None
+        ),
+    )
+
+    user = db.relationship("User")
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "amount_minor > 0",
+            name="expense_amount_positive",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "description": self.description,
+            "category": self.category,
+            "amount_minor": self.amount_minor,
+            "date_paid": self.date_paid.isoformat(),
+            "notes": self.notes,
+            "recorded_by": self.user.name,
+            "created_at": self.created_at.replace(
+                tzinfo=timezone.utc
+            ).isoformat(),
         }
