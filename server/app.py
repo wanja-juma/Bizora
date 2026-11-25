@@ -11,6 +11,7 @@ from routes.auth_routes import auth, validate_account
 from routes.catalog_routes import catalog
 from routes.inventory_routes import inventory
 from routes.sales_routes import sales
+from routes.expense_routes import expenses
 
 def create_app():
     app = Flask(__name__)
@@ -33,6 +34,7 @@ def create_app():
     app.register_blueprint(inventory, url_prefix="/api")
     app.register_blueprint(sales, url_prefix="/api")
     app.register_blueprint(health, url_prefix="/api")
+    app.register_blueprint(expenses, url_prefix="/api")
 
     @jwt.user_lookup_loader
     def load_user(_jwt_header, jwt_data):
