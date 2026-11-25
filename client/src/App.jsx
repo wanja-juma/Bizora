@@ -4,7 +4,7 @@ import CatalogManager from "./components/CatalogManager";
 import { api } from "./services/api";
 import SalesManager from "./components/SalesManager";
 import "./App.css";
-
+import ExpenseManager from "./components/ExpenseManager";
 const emptyStaff = {
   name: "",
   email: "",
@@ -315,6 +315,13 @@ function App() {
           <SalesManager
             token={token}
             user={user}
+            onSessionExpired={handleSessionExpired}
+          />
+        )}
+
+        {!checking && user?.role === "owner" && token && (
+          <ExpenseManager
+            token={token}
             onSessionExpired={handleSessionExpired}
           />
         )}
