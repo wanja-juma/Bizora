@@ -6,7 +6,9 @@ from uuid import UUID, uuid4
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import current_user, jwt_required
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from datetime import datetime, timezone
 
+from permissions import owner_required
 from extensions import db
 from models import (
     Product,
@@ -285,3 +287,124 @@ def create_sale():
         }), 503
 
     return jsonify(sale.to_dict()), 201
+
+@sales.post("/sales/<int:sale_id>/cancel")
+@owner_required
+def cancel_sale(sale_id):
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "message": "Provide a cancellation reason.",
+        }), 400
+
+    reason = data.get("reason")
+
+    if (
+        not isinstance(reason, str)
+        or not 1 <= len(reason.strip()) <= 255
+    ):
+        return jsonify({
+            "message": "Reason must contain 1–255 characters.",
+        }), 400
+
+    reason = reason.strip()
+
+    sale = db.session.get(Sale, sale_id)
+
+    if sale is None:
+        return jsonify({"message": "Sale not found."}), 404
+
+    try:
+        # Only one request can change completed -> cancelled.
+        result = db.session.execute(
+            db.update(Sale)
+            .where(
+                Sale.id == sale_id,
+                Sale.status == "completed",
+            )
+            .values(
+                status="cancelled",
+                cancellation_reason=reason,
+                cancelled_at=datetime.now(
+                    timezone.utc
+                ).replace(tzinfo=None),
+                cancelled_by_id=current_user.id,
+            )
+            .execution_options(synchronize_session=False)
+        )
+
+        if result.rowcount != 1:
+            db.session.rollback()
+
+            existing = db.session.get(Sale, sale_id)
+
+            if existing and existing.status == "cancelled":
+                return jsonify(existing.to_dict()), 200
+
+            return jsonify({
+                "message": "This sale cannot be cancelled.",
+            }), 409
+
+        for item in sorted(
+            sale.items,
+            key=lambda line: line.variant_id,
+        ):
+            restored = db.session.execute(
+                db.update(ProductVariant)
+                .where(
+                    ProductVariant.id == item.variant_id,
+                    ProductVariant.stock + item.quantity
+                    <= 1000000,
+                )
+                .values(
+                    stock=ProductVariant.stock + item.quantity
+                )
+                .execution_options(synchronize_session=False)
+            )
+
+            if restored.rowcount != 1:
+                raise ValueError(
+                    f"Cannot restore stock for {item.sku}. "
+                    "Check the variant and stock limit."
+                )
+
+            balance = db.session.scalar(
+                db.select(ProductVariant.stock).where(
+                    ProductVariant.id == item.variant_id
+                )
+            )
+
+            db.session.add(
+                StockMovement(
+                    variant_id=item.variant_id,
+                    user_id=current_user.id,
+                    request_id=str(uuid4()),
+                    kind="sale_cancellation",
+                    quantity_change=item.quantity,
+                    balance_after=balance,
+                    reason=f"Cancellation of sale #{sale_id}",
+                    sale_id=sale_id,
+                )
+            )
+
+        db.session.commit()
+
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"message": str(error)}), 409
+
+    except SQLAlchemyError:
+        current_app.logger.exception(
+            "Sale cancellation failed"
+        )
+        db.session.rollback()
+
+        return jsonify({
+            "message": (
+                "Cancellation could not be completed. "
+                "Retry the request."
+            ),
+        }), 503
+
+    return jsonify(sale.to_dict()), 200

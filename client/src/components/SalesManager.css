@@ -63,3 +63,19 @@
 .sales-history h4 {
   margin-top: 0;
 }
+
+.cancel-sale-form {
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.cancel-sale-form button {
+  background: #b91c1c;
+}
+
+.cancellation-details {
+  margin-top: 16px;
+  padding: 12px;
+  border-left: 4px solid #b91c1c;
+  background: #fef2f2;
+}

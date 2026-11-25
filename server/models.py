@@ -210,7 +210,7 @@ class StockMovement(db.Model):
             name="movement_balance_nonnegative",
         ),
         db.CheckConstraint(
-            "kind IN ('receipt', 'adjustment', 'sale')",
+            "kind IN ('receipt', 'adjustment', 'sale', 'sale_cancellation')",
             name="valid_stock_movement_kind",
         ),
     )
@@ -310,7 +310,24 @@ class Sale(db.Model):
         default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
     )
 
-    user = db.relationship("User")
+    cancelled_by_id = db.Column(
+                db.Integer,
+                db.ForeignKey(
+                    "users.id",
+                    name="fk_sales_cancelled_by",
+                ),
+                nullable=True,
+    )
+
+    user = db.relationship(
+    "User",
+    foreign_keys=[user_id],
+    )
+
+    cancelled_by = db.relationship(
+        "User",
+        foreign_keys=[cancelled_by_id],
+    )
 
     items = db.relationship(
         "SaleItem",
@@ -318,6 +335,24 @@ class Sale(db.Model):
         cascade="all, delete-orphan",
         order_by="SaleItem.id",
     )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="completed",
+        server_default="completed",
+)
+
+    cancellation_reason = db.Column(
+        db.String(255),
+        nullable=True,
+)
+
+    cancelled_at = db.Column(
+        db.DateTime,
+        nullable=True,
+    )
+
 
     __table_args__ = (
         db.CheckConstraint(
@@ -328,6 +363,10 @@ class Sale(db.Model):
             "payment_method IN ('cash', 'mpesa', 'card')",
             name="valid_sale_payment_method",
         ),
+        db.CheckConstraint(
+    "status IN ('completed', 'cancelled')",
+    name="valid_sale_status",
+),
     )
 
     def to_dict(self):
@@ -338,6 +377,20 @@ class Sale(db.Model):
             "total_minor": self.total_minor,
             "created_at": self.created_at.replace(tzinfo=timezone.utc).isoformat(),
             "items": [item.to_dict() for item in self.items],
+            "status": self.status,
+            "cancellation_reason": self.cancellation_reason,
+            "cancelled_at": (
+            self.cancelled_at.replace(
+            tzinfo=timezone.utc
+            ).isoformat()
+            if self.cancelled_at
+            else None
+            ),
+            "cancelled_by": (
+            self.cancelled_by.name
+            if self.cancelled_by
+            else None
+            ),
         }
 
 
