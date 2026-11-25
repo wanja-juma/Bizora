@@ -1,0 +1,85 @@
+.owner-dashboard {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.report-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.report-filter label {
+  display: flex;
+  flex: 1 1 170px;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.report-filter input {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  color: #172b4d;
+}
+
+.report-filter button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #087f8c;
+  color: white;
+  cursor: pointer;
+}
+
+.report-filter button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 190px), 1fr)
+  );
+  gap: 16px;
+}
+
+.report-cards article {
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.report-cards h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: #64748b;
+}
+
+.report-cards strong {
+  font-size: 23px;
+}
+
+.dashboard-stock-list {
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-stock-list li {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  overflow-wrap: anywhere;
+}

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import CatalogManager from "./components/CatalogManager";
 import { api } from "./services/api";
 import SalesManager from "./components/SalesManager";
+import OwnerDashboard from "./components/OwnerDashboard";
+
 import "./App.css";
 import ExpenseManager from "./components/ExpenseManager";
 const emptyStaff = {
@@ -302,6 +304,13 @@ function App() {
               </p>
             )}
           </>
+        )}
+
+        {!checking && user?.role === "owner" && token && (
+          <OwnerDashboard
+            token={token}
+            onSessionExpired={handleSessionExpired}
+          />
         )}
         {!checking && user && token && (
           <CatalogManager
